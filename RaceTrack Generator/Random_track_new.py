@@ -58,7 +58,7 @@ def plot_ellipse(center_x, center_y, semi_major_axis, semi_minor_axis, angle_deg
     y_coords = center_y + semi_major_axis * np.cos(angles) * np.sin(angle_radians) + semi_minor_axis * np.sin(angles) * np.cos(angle_radians)
 
     # Plot the ellipse
-    plt.plot(x_coords, y_coords)
+    # plt.plot(x_coords, y_coords)
     # plt.show()
     return x_coords,y_coords
 
@@ -95,16 +95,6 @@ def calculate_rotated_rectangle_perimeter(center_x, center_y, width, height, num
 
     return x_coords, y_coords
 
-# def plot_rectangle_with_coordinates(center_x, center_y, width, height, num_points):
-#     perimeter_coords = calculate_rectangle_perimeter(center_x, center_y, width, height, num_points)
-
-#     perimeter_coords.append(perimeter_coords[0])  # Close the loop
-
-#     x_coords, y_coords = zip(*perimeter_coords)
-
-#     plt.plot(x_coords, y_coords, color='r')
-#     # plt.show()
-#     return x_coords,y_coords
 
 def calculate_rotated_pentagon_perimeter(center_x, center_y, side_length, rotation_angle_deg, num_points=1000):
     rotation_angle_rad = math.radians(rotation_angle_deg)
@@ -182,26 +172,41 @@ def deform_and_create(x_coords,y_coords):
     # Offset the ellipse inward and outward
     WIDTH = 3  # Change this value to set the width of the offset
     track_xy_offset_in = track_poly.buffer(2*WIDTH)
-    track_xy_center= track_poly.buffer(WIDTH)
-    track_xy_offset_out = track_poly.buffer(0)
+    # track_xy_center= track_poly.buffer(WIDTH)
+    # track_xy_offset_out = track_poly.buffer(0)
+    track_xy_center = track_xy_offset_in.buffer(-WIDTH)
+    track_xy_offset_out = track_xy_offset_in.buffer(-2*WIDTH)
     track_xy_offset_in_np = np.array(track_xy_offset_in.exterior.coords)
     track_xy_offset_out_np = np.array(track_xy_offset_out.exterior.coords)
     track_xy = np.array(track_xy_center.exterior.coords)
     plt.figure()
     # Plot the offset polygons
-    plt.plot(track_xy[:,0],track_xy[:,1], label = 'Center line')
-    plt.plot(track_xy_offset_in_np[:, 0], track_xy_offset_in_np[:, 1], label='Offset Inward', linestyle='--')
-    plt.plot(track_xy_offset_out_np[:, 0], track_xy_offset_out_np[:, 1], label='Offset Outward', linestyle='--')
+    plt.plot(track_xy[:,0],track_xy[:,1],linestyle='--')
+    plt.plot(track_xy_offset_in_np[:, 0], track_xy_offset_in_np[:, 1] ,linestyle='-')
+    plt.plot(track_xy_offset_out_np[:, 0], track_xy_offset_out_np[:, 1], linestyle='-')
     plt.axis("equal")
+    plt.xticks([])
+    plt.yticks([])
+    plt.savefig('maps/Track_done' + '_map.pdf', dpi=580)
+
 
     # Add a legend to differentiate between the ellipse and offset polygons
-    plt.legend()
+    #plt.legend()
 
-    plt.show()
+    # plt.show()
+    plt.xticks([])
+    plt.yticks([])   
     plt.figure()
     return track_xy,track_xy_offset_in_np,track_xy_offset_out_np
 
 def find_outline_coords(shape1_x_coords, shape1_y_coords, shape2_x_coords, shape2_y_coords):
+    plt.plot(shape1_x_coords,shape1_y_coords,linestyle = '-', color = "blue")
+    plt.plot(shape2_x_coords,shape2_y_coords,linestyle = '-', color = "red")
+    plt.xticks([])
+    plt.yticks([])
+    plt.savefig('maps/Track_shapes' + '_map.pdf', dpi=580)
+    # plt.show()
+    
     shape1_coords = [(x,y) for x,y in zip(shape1_x_coords, shape1_y_coords)]
     shape2_coords = [(x,y) for x,y in zip(shape2_x_coords, shape2_y_coords)]
     shape1_coords = np.asarray(shape1_coords)
@@ -216,7 +221,10 @@ def find_outline_coords(shape1_x_coords, shape1_y_coords, shape2_x_coords, shape
     intersection_points_arr = np.array(intersection_points.exterior.coords)
     x_coords = intersection_points_arr[:,0]
     y_coords = intersection_points_arr[:,1]
-    # plt.plot(x_coords,y_coords,color = 'green')
+    plt.plot(x_coords,y_coords,color = 'green')
+    plt.xticks([])
+    plt.yticks([])
+    plt.savefig('maps/Track_intersect' + '_map.pdf', dpi=580)
     # plt.show()
     return x_coords,y_coords
 
@@ -225,7 +233,7 @@ def deform_track(x_coords, y_coords):
     x_deform =[]
     y_deform = []
     done = False
-    deform_index_start = 7
+    deform_index_start = 2
     connect_hairpin = False
     connect_feature = False
     connect_chicane = False
@@ -233,8 +241,8 @@ def deform_track(x_coords, y_coords):
         deform_index_end = deform_index_start + len(x_coords)/4
         next_deform = np.random.randint(deform_index_start,deform_index_end)
 
-        if next_deform >= len(x_coords)-1:
-            next_deform = len(x_coords)-1
+        if next_deform >= len(x_coords)-2:
+            next_deform = len(x_coords)-2
             done = True
 
         x_start = x_coords[deform_index_start]
@@ -245,8 +253,8 @@ def deform_track(x_coords, y_coords):
         num_points =  next_deform-deform_index_start
         poly_weight = 0.35
         feature_weigth = 0.075
-        chicane_weight = 0.15
-        straight_weigth = 0.2
+        chicane_weight = 0.0
+        straight_weigth = 0.3
         hairpin_weight = 0.075
         shape_weight = 0.15
 
@@ -256,32 +264,32 @@ def deform_track(x_coords, y_coords):
             # weights = [0.35, 0.015, 0.0, 0.2,0.01, 0.15] 
             feature_weigth = 0.1
             hairpin_weight = 0.1 
-            chicane_weight = 0.2
-            poly_weight = 0.3
-            shape_weight = 0.2
-            straight_weigth = 0.1
+            chicane_weight = 0.0
+            poly_weight = 0.4
+            shape_weight = 0.25
+            straight_weigth = 0.15
 
         elif num_points < 100:
             # weights = [0.375, 0.0, 0.25, 0.225,0.0, 0.125]
             feature_weigth = 0
             hairpin_weight = 0   
-            chicane_weight = 0.25
-            poly_weight = 0.4
-            shape_weight = 0.25
-            straight_weigth = 0.2
+            chicane_weight = 0.0
+            poly_weight = 0.5
+            shape_weight = 0.4
+            straight_weigth = 0.25
 
         if connect_feature or connect_hairpin:
             feature_weigth = 0
             hairpin_weight = 0   
-            chicane_weight = 0.1
+            chicane_weight = 0.0
             poly_weight = 0.475
-            shape_weight = 0.125
-            straight_weigth = 0.30
+            shape_weight = 0.155
+            straight_weigth = 0.35
 
         if connect_chicane:
             poly_weight = 0.5
             feature_weigth = 0.1
-            chicane_weight = 0.05
+            chicane_weight = 0.00
             straight_weigth = 0.2
             hairpin_weight = 0.1
             shape_weight = 0.15     
@@ -289,7 +297,7 @@ def deform_track(x_coords, y_coords):
         if LENGTH < 300 and same_size: 
             feature_weigth = 0
             hairpin_weight = 0   
-            chicane_weight = 0.1
+            chicane_weight = 0.0
             poly_weight = 0.475
             shape_weight = 0.125
             straight_weigth = 0.30      
@@ -369,53 +377,28 @@ def deform_track(x_coords, y_coords):
 ################################################################
         x_deform.extend(x_values)
         y_deform.extend(y_values)
+        plt.figure()
         plt.plot(x_coords, y_coords)
         plt.plot(x_deform, y_deform,color = 'red')
         plt.plot(x_values, y_values,color = 'green')
-        
-        # if connect_feature or connect_hairpin:
-        #     smooth_transition_x = x_deform[(deform_index_start-1):(deform_index_start+2)]
-        #     smooth_transition_y = y_deform[(deform_index_start-1):(deform_index_start+2)]
-        # else:
-        #     smooth_transition_x = x_deform[(deform_index_start-7):(deform_index_start-4)]
-        #     smooth_transition_y = y_deform[(deform_index_start-7):(deform_index_start-4)]
-        #     smooth_transition_x.extend(x_deform[(deform_index_start+4):(deform_index_start+7)])
-        #     smooth_transition_y.extend(y_deform[(deform_index_start+4):(deform_index_start+7)])        
 
-        # # plt.plot(smooth_transition_x, smooth_transition_y)
-        # # plt.plot(x_end,y_end,marker = 'o',color = 'blue')
-        # # plt.plot(x_deform, y_deform,color = 'purple')
-        # smooth_transition_x = np.array(smooth_transition_x, dtype = float)
-        # smooth_transition_y = np.array(smooth_transition_y, dtype = float)
-        # try:
-        #     tck, u = splprep([smooth_transition_x, smooth_transition_y], s = 1)
-        #     u_new = np.linspace(0,1,14)
-        #     x_spline, y_spline = splev(u_new, tck)
-        #     c = 0
-        #     for i in range((deform_index_start-7),(deform_index_start+7)):
-        #         x_deform[i] = x_spline[c]
-        #         y_deform[i] = y_spline [c]
-        #         c = c+1
-        #     plt.plot(x_spline,y_spline,color = 'yellow')
-        #     # plt.show()
-        # except:
-        #     print('shit')
         deform_index_start = next_deform + 1
 
-        plt.plot(x_deform, y_deform, label='Polynomial',color = 'red')
+        plt.plot(x_deform, y_deform,color = 'red')
+        plt.xticks([])
+        plt.yticks([])
+        # plt.savefig('maps/Track_deform' + str(deform_index_start)+'_map.pdf', dpi=580)
         # plt.show()
-    
+
     try:
-        tck, u = splprep([x_deform, y_deform], s = 100)
+        tck, u = splprep([x_deform, y_deform], s = 60)
         u_new = np.linspace(0, 1, num=1000)
         x_spline_2, y_spline_2 = splev(u_new, tck)
         # distances = np.sqrt(np.diff(x_spline_2)**2 + np.diff(y_spline_2)**2)
-
-        # # Add up the distances to get the length of the spline curve
-        # curve_length = np.sum(distances)
-        # print(curve_length)
-        # track_xy = [(x, y) for x, y in zip(x_spline_2, y_spline_2)]
-        # print(calculate_track_length(track_xy))
+        plt.plot(x_spline_2,y_spline_2,color = 'black')
+        plt.xticks([])
+        plt.yticks([])
+        # plt.savefig('maps/Track_spline' + '_map.pdf', dpi=580)
 
 
     except:
@@ -439,15 +422,15 @@ def connect_with_feature(x_start,y_start,x_end,y_end,num_points):
     dy = y_end - y_start
     angle = np.arctan2(dy, dx)
     angle_new = np.arctan2(dy, dx) + math.pi / 2
-    distance = np.random.randint(5,100)
-    radius = np.random.randint(5,45)
+    distance = np.random.randint(5,50)
+    radius = np.random.randint(5,25)
     point_x = x_end + distance * math.cos(angle_new)
     point_y = y_end + distance * math.sin(angle_new)
     angles = (angle_new + math.pi/2) - np.linspace(0,math.pi, (num_points-4))
     x_coords = point_x + radius * np.cos(angles)
     y_coords = point_y + radius * np.sin(angles)
     choice = np.random.randint(0,10)
-    if choice > 7:
+    if choice > 5:
         x_values.append((x_start+point_x)/2)
         y_values.append((y_start+point_y)/2)
     else: 
@@ -471,7 +454,7 @@ def connect_with_hairpin(x_start,y_start,x_end,y_end,num_points):
     dy = y_end - y_start
     div = np.random.randint(3,7)
     angle = np.arctan2(dy, dx) + math.pi / div
-    distance = np.random.randint(5,65)
+    distance = np.random.randint(5,35)
     point_x = x_start + distance * math.cos(angle)
     point_y = y_start + distance * math.sin(angle)
     slope = (point_y - y_start) / (point_x - x_start)
@@ -488,14 +471,14 @@ def connect_with_hairpin(x_start,y_start,x_end,y_end,num_points):
     y_coords = slope*x_coords + intercept
     x_values.extend(x_coords)
     y_values.extend(y_coords)
-    # plt.plot(x_values,y_values)
+    plt.plot(x_values,y_values)
     # plt.show()
     return x_values, y_values     
 
 def connect_with_poly(x_start,y_start,x_end,y_end,num_points):
     x_poly = np.array([x_start, x_end])
     y_poly = np.array([y_start, y_end])
-    degree = np.random.randint(3,10)
+    degree = np.random.randint(3,5)
     coefficients = np.polyfit(x_poly, y_poly, degree)
     polynomial_func = np.poly1d(coefficients)
     x_values = np.linspace(x_start, x_end, num_points)
@@ -506,7 +489,7 @@ def connect_with_chicane(x_start,y_start,x_mid,y_mid,x_end,y_end,num_points):
     plt.plot(x_mid,y_mid,marker = 'x',color = 'grey')
     x_poly = np.array([x_start,x_mid,x_end])
     y_poly = np.array([y_start,y_mid,y_end])
-    degree = np.random.randint(3,7)
+    degree = 3
     coefficients = np.polyfit(x_poly, y_poly, degree)
     polynomial_func = np.poly1d(coefficients)
     x_values = np.linspace(x_start, x_end, num_points)
@@ -528,7 +511,10 @@ def convert_track(track, track_int, track_ext, iter):
     # converts track to image and saves the centerline as waypoints
     fig, ax = plt.subplots()
     fig.set_size_inches(50,50)
-    # ax.plot(track[:,0],track[:,1], color = "black", linewidth=2)
+    # ax.plot(track[:,0],track[:,1], color = "black", linewidth=2,linestyle = "--")
+    # ax.plot(track[0:348,0],track[0:348,1], color = "red", linewidth=2,linestyle = "--")
+    # ax.plot(track[0, 0], track[0, 1], 'ro', markersize=20)
+    # ax.plot(track[0, 0], track[0, 1], marker='o', markersize=20, markerfacecolor='red', markeredgecolor='red', linestyle='None')
     ax.plot(*track_int.T, color='black', linewidth = 3)
     ax.plot(*track_ext.T, color='black', linewidth = 3)
     plt.tight_layout()
@@ -536,7 +522,10 @@ def convert_track(track, track_int, track_ext, iter):
     ax.set_xlim(-300, 300)
     ax.set_ylim(-300, 300)
     plt.axis('off')
-    plt.savefig('maps/Data_set_track_' + str(iter) + '_map.png', dpi=80)
+    plt.savefig('maps/Track' + str(iter) + '_map.png', dpi=80)
+    # plt.savefig('maps/Track' + str(iter) + '_map_color.pdf', dpi=580)
+
+    # plt.show()
     # print(*track_int.T)
     # print('******************************************************************')
     # print(*track_ext.T)
@@ -557,28 +546,17 @@ def convert_track(track, track_int, track_ext, iter):
     map_origin_x = -origin_x_pix*0.05
     map_origin_y = -origin_y_pix*0.05
 
-    # map_origin_x = -origin_x_pix*0.05
-    # map_origin_y = -origin_y_pix*0.05
-
-    # plt.plot(xy_pixels[:,0]*0.05 ,xy_pixels[:,1]*0.05 ,color = 'blue')
-    # plt.figure()
-    # plt.plot(xy_pixels)
-    # plt.plot(xy_pixels[:,0] * 0.05 ,xy_pixels[:,1] * 0.05,color = 'blue')
-    # plt.plot(track[:,0],track[:,1],color = 'red')
-    # plt.plot(*track_int.T, color='black', linewidth = 3)
-    # plt.plot(*track_ext.T, color='black', linewidth = 3)
-    # plt.show()
     # convert image using cv2
-    cv_img = cv2.imread('maps/Data_set_track_' + str(iter) + '_map.png', -1)
+    cv_img = cv2.imread('maps/Track' + str(iter) + '_map.png', -1)
     # convert to bw
     cv_img_bw = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
     # saving to img
-    cv2.imwrite('maps/Data_set_track_' + str(iter) + '_map.png', cv_img_bw)
+    cv2.imwrite('maps/Track' + str(iter) + '_map.png', cv_img_bw)
     # cv2.imwrite('maps/map' + str(iter) + '.pgm', cv_img_bw)
 
     # create yaml file
-    yaml = open('maps/Data_set_track_' + str(iter) + '_map.yaml', 'w')
-    yaml.write('image: Data_set_track_' + str(iter) + '_map.png\n')
+    yaml = open('maps/Track' + str(iter) + '_map.yaml', 'w')
+    yaml.write('image: Track' + str(iter) + '_map.png\n')
     yaml.write('resolution: 0.062500\n')
     yaml.write('origin: [' + str(map_origin_x) + ',' + str(map_origin_y) + ', 0.000000]\n')
     yaml.write('negate: 0\noccupied_thresh: 0.45\nfree_thresh: 0.196')
@@ -586,7 +564,7 @@ def convert_track(track, track_int, track_ext, iter):
     plt.close()
 
     # saving track centerline as a csv in ros coords
-    waypoints_csv = open('centerline/Data_set_track_' + str(iter) + '_centerline.csv', 'w')
+    waypoints_csv = open('maps/Track' + str(iter) + '_centerline.csv', 'w')
     waypoints_csv.write('Xm,Ym,Wr,Wl\n')
     for row in xy_pixels[::-1]:
         waypoints_csv.write(str(0.05*row[0]) + ', ' + str(0.05*row[1]) + ',1.1,1.1\n')
@@ -635,19 +613,15 @@ def place_on_origin(coordinates):
 
 
 if __name__ == '__main__':
-    for i in range(0,10):
-    # try:
-    #     track, track_int, track_ext = create_track()
-    # except:
-    #     print('Random generator failed, retrying')
-    #     continue
-    # convert_track(track, track_int, track_ext, i)
+    
+    for i in range(0,1):
+
         shape_1 = np.random.randint(0,3)
         shape_2 = np.random.randint(0,3)
         center_x_1 = 25
         center_y_1 = 15
         if shape_1 == 0:
-            semi_major_axis = np.random.randint(30,200)
+            semi_major_axis = np.random.randint(30,150)
             semi_minor_axis = np.random.randint(10,round(semi_major_axis/2))
             angle_degrees = np.random.randint(0,180)
             shape_1_x, shape_1_y = plot_ellipse(center_x_1, center_y_1, semi_major_axis, semi_minor_axis, angle_degrees, num_points=1000)
@@ -655,7 +629,7 @@ if __name__ == '__main__':
             center_x = center_x_1 + np.random.randint(-1*center_x_1, center_x_1)
             center_y = center_y_1 + np.random.randint(-1*center_y_1,center_y_1) 
             rotation_angle_deg =  np.random.randint(0,180)
-            height = np.random.randint(30,200)
+            height = np.random.randint(30,150)
             width = np.random.randint(10,round(height/1.2))
             num_points = 250
             angle_degrees = np.random.randint(0,180)
@@ -663,7 +637,7 @@ if __name__ == '__main__':
         elif shape_1 == 2:
             center_x = center_x_1 + np.random.randint(-1*center_x_1, center_x_1)
             center_y = center_y_1 + np.random.randint(-1*center_y_1,center_y_1)  
-            side_length = np.random.randint(10,75) 
+            side_length = np.random.randint(10,50) 
             rotation_angle_deg = np.random.randint(0,180)
             shape_1_x,shape_1_y = calculate_rotated_pentagon_perimeter(center_x, center_y, side_length, rotation_angle_deg,num_points = 1000)     
 
@@ -672,7 +646,7 @@ if __name__ == '__main__':
         if shape_2 == 0:
             center_x = center_x_1 + np.random.randint(-1*center_x_1,2*center_x_1)
             center_y = center_y_1 + np.random.randint(-1*center_y_1,2*center_y_1) 
-            semi_major_axis = np.random.randint(30,200)
+            semi_major_axis = np.random.randint(30,150)
             semi_minor_axis = np.random.randint(10,round(semi_major_axis/2))           
             angle_degrees = np.random.randint(0,180)
             shape_2_x, shape_2_y = plot_ellipse(center_x, center_y, semi_major_axis, semi_minor_axis, angle_degrees, num_points=1000)
@@ -680,7 +654,7 @@ if __name__ == '__main__':
             center_x = center_x_1 + np.random.randint(-1*center_x_1, 2*center_x_1)
             center_y = center_y_1 + np.random.randint(-1*center_y_1,2*center_y_1) 
             rotation_angle_deg = np.random.randint(0,180)
-            height = np.random.randint(30,200)
+            height = np.random.randint(30,150)
             width = np.random.randint(10,round(height/1.2))
             num_points = 250
             angle_degrees = np.random.randint(0,180)
@@ -688,18 +662,18 @@ if __name__ == '__main__':
         elif shape_2 == 2:
             center_x = center_x_1 + np.random.randint(-1*center_x_1, 2*center_x_1)
             center_y = center_y_1 + np.random.randint(-1*center_y_1,2*center_y_1)  
-            side_length = np.random.randint(10,75) 
+            side_length = np.random.randint(10,50) 
             rotation_angle_deg = np.random.randint(0,180)
             shape_2_x,shape_2_y = calculate_rotated_pentagon_perimeter(center_x, center_y, side_length, rotation_angle_deg,num_points = 1000)
-
+        
+        # plt.show()
 
         # outline_x_coords,outline_y_coordes = find_outline_coords(shape_1_x, shape_1_y, shape_2_x, shape_2_y)
-        while True:
-            try:
-                outline_x_coords,outline_y_coordes = find_outline_coords(shape_1_x, shape_1_y, shape_2_x, shape_2_y)
-                track,track_int,track_ext = deform_and_create(outline_x_coords,outline_y_coordes)
-                convert_track(track, track_int, track_ext, i)
-                break
-            except:
-                print("Error !!!")
         
+        try:
+            outline_x_coords,outline_y_coordes = find_outline_coords(shape_1_x, shape_1_y, shape_2_x, shape_2_y)
+            track,track_int,track_ext = deform_and_create(outline_x_coords,outline_y_coordes)
+            convert_track(track, track_int, track_ext, i)
+        except:
+            print("Error !!!")
+    
